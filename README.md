@@ -1,3 +1,9 @@
+---
+noteId: "2d5bd3c0983711ee856677a2012af631"
+tags: []
+
+---
+
 # JoyPy
 
 [![PyPI version](https://badge.fury.io/py/joypy.svg)](https://badge.fury.io/py/joypy) [![python version](https://img.shields.io/badge/python-3.5+-blue.svg)](https://www.python.org/download/releases/3.5.0/)  ![build status](https://github.com/leotac/joypy/actions/workflows/test.yml/badge.svg) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Downloads](https://pepy.tech/badge/joypy)](https://pepy.tech/project/joypy)

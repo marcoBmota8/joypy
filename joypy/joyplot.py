@@ -85,10 +85,12 @@ def _moving_average(a, n=3, zero_padded=False):
 
 def joyplot(data, column=None, by=None, grid=False,
             xlabelsize=None, xrot=None, ylabelsize=None, yrot=None,
+            ylog=False, logscalethres=1e-1,
             ax=None, figsize=None,
             hist=False, bins=10,
             fade=False, ylim='max',
-            fill=True, linecolor=None,
+            rug=False, rug_kws=None,
+            fill=True, linecolor=None,linealpha=1,
             overlap=1, background=None,
             labels=None, xlabels=True, ylabels=True,
             range_style='all',
@@ -121,6 +123,8 @@ def joyplot(data, column=None, by=None, grid=False,
         If passed, used to form separate plot groups
     grid : boolean, default True
         Whether to show axis grid lines
+    rug : boolean, default False
+        Whether to show rugplot on x axis for each subplot
     labels : boolean or list, default True.
         If list, must be the same size of the de
     xlabelsize : int, default None
@@ -131,6 +135,8 @@ def joyplot(data, column=None, by=None, grid=False,
         If specified changes the y-axis label size
     yrot : float, default None
         rotation of y axis labels
+    ylog : boolean, default False
+        Whether to plot the y axis in log scale
     ax : matplotlib axes object, default None
     figsize : tuple
         The size of the figure to create in inches by default
@@ -241,10 +247,12 @@ def joyplot(data, column=None, by=None, grid=False,
     return _joyplot(converted, labels=labels, sublabels=sublabels,
                     grid=grid,
                     xlabelsize=xlabelsize, xrot=xrot, ylabelsize=ylabelsize, yrot=yrot,
+                    ylog=ylog, logscalethres=logscalethres,
                     ax=ax, figsize=figsize,
+                    rug=rug, rug_kws=rug_kws,
                     hist=hist, bins=bins,
                     fade=fade, ylim=ylim,
-                    fill=fill, linecolor=linecolor,
+                    fill=fill, linecolor=linecolor, linealpha=linealpha,
                     overlap=overlap, background=background,
                     xlabels=xlabels,
                     range_style=range_style, x_range=x_range,
@@ -258,9 +266,9 @@ def joyplot(data, column=None, by=None, grid=False,
 ###########################################
 
 def plot_density(ax, x_range, v, kind="kde", bw_method=None,
-                 bins=50,
-                 fill=False, linecolor=None, clip_on=True,
-                 normalize=True, floc=None,**kwargs):
+                 bins=50, ylog=False, rug=False, rug_kws=None, logscalethres=1e-1,
+                 fill=False, linecolor=None, linealpha=1, clip_on=True,
+                 normalize=True, floc=None, **kwargs):
     """ Draw a density plot given an axis, an array of values v and an array
         of x positions where to return the estimated density.
     """
@@ -346,8 +354,20 @@ def plot_density(ax, x_range, v, kind="kde", bw_method=None,
     # we only want one entry per group in the legend (if shown).
     if fill:
         kwargs["label"] = None
-
-    ax.plot(x_range, y, clip_on=clip_on, **kwargs)
+    
+    # Plot the rugplot if specified
+    if rug:
+        ax.plot(v, [0.00]*len(v), '|', clip_on=clip_on, **rug_kws)
+     
+    # Plot the density plot with y axis in log scale if specified   
+    mod_kws = kwargs.copy()
+    mod_kws.pop('alpha', None)
+    if ylog:
+        ax.plot(x_range, y, clip_on=clip_on, alpha=linealpha, **mod_kws)
+        ax.set_yscale('symlog', linthresh=logscalethres) # symmetric logarithmic scale
+            
+    else:
+        ax.plot(x_range, y, clip_on=clip_on, alpha=linealpha, **mod_kws)
 
 
 ###########################################
@@ -360,9 +380,10 @@ def _joyplot(data,
              ylabelsize=None, yrot=None,
              ax=None, figsize=None,
              hist=False, bins=10,
-             fade=False,
+             rug=False, rug_kws=None,
+             fade=False, ylog=False, logscalethres=1e-1,
              xlim=None, ylim='max',
-             fill=True, linecolor=None,
+             fill=True, linecolor=None, linealpha=1,
              overlap=1, background=None,
              range_style='all', x_range=None, tails=0.2,
              title=None,
@@ -496,7 +517,9 @@ def _joyplot(data,
 
                 plot_density(a, x_range, subgroup,
                              fill=fill, linecolor=linecolor, label=sublabel,
-                             zorder=element_zorder, color=element_color,
+                             zorder=element_zorder, color=element_color, 
+                             ylog=ylog, logscalethres=logscalethres,
+                             rug=rug, rug_kws=rug_kws,
                              bins=bins, **kwargs)
 
         # Setup the current axis: transparency, labels, spines.
