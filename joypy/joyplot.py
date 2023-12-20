@@ -112,7 +112,7 @@ def joyplot(data, column=None, by=None, grid=False,
     This wrapper method tries to convert whatever structure is given
     to a nested collection of lists with additional information
     on labels, and use the private _joyplot function to actually
-    draw theh plot.
+    draw the plot.
 
     Parameters
     ----------
@@ -137,6 +137,8 @@ def joyplot(data, column=None, by=None, grid=False,
         rotation of y axis labels
     ylog : boolean, default False
         Whether to plot the y axis in log scale
+    logscalethres : float or list, default 1e-1
+        Threshold for the symlog scale.
     ax : matplotlib axes object, default None
     figsize : tuple
         The size of the figure to create in inches by default
@@ -243,7 +245,6 @@ def joyplot(data, column=None, by=None, grid=False,
     if any(len(subg)==0 for g in converted for subg in g):
         warn("At least a column/group has no numeric values.")
 
-
     return _joyplot(converted, labels=labels, sublabels=sublabels,
                     grid=grid,
                     xlabelsize=xlabelsize, xrot=xrot, ylabelsize=ylabelsize, yrot=yrot,
@@ -265,7 +266,7 @@ def joyplot(data, column=None, by=None, grid=False,
 
 ###########################################
 
-def plot_density(ax, x_range, v, kind="kde", bw_method=None,
+def plot_density(ax, x_range, v, kind="kde", bandwidth=None, bw_method=None,
                  bins=50, ylog=False, rug=False, rug_kws=None, logscalethres=1e-1,
                  fill=False, linecolor=None, linealpha=1, clip_on=True,
                  normalize=True, floc=None, **kwargs):
@@ -278,7 +279,7 @@ def plot_density(ax, x_range, v, kind="kde", bw_method=None,
 
     if kind == "kde":
         try:
-            gkde = gaussian_kde(v, bw_method=bw_method)
+            gkde = gaussian_kde(v, bw_method=bandwidth)
             y = gkde.evaluate(x_range)
         except ValueError:
             # Handle cases where there is no data in a group.
@@ -418,9 +419,10 @@ def _joyplot(data,
     hist : boolean, default False
     bins : integer, default 10
         Number of histogram bins to be used
-    kwarg : other plotting keyword arguments
+    kwargs : other plotting keyword arguments
         To be passed to hist/kde plot function
     """
+
 
     if fill is True and linecolor is None:
         linecolor = "k"
@@ -482,6 +484,16 @@ def _joyplot(data,
             kwargs['alpha'] = _get_alpha(i, num_axes)
 
         num_subgroups = len(group)
+        
+        if isinstance(kwargs['bw_method'], list):
+            bandwidth = kwargs['bw_method'][i]
+        else:
+            bandwidth = kwargs['bw_method']
+        
+        if isinstance(logscalethres, list):
+            symlogthres=logscalethres[i]
+        else:
+            symlogthres=logscalethres
 
         if hist:
             # matplotlib hist() already handles multiple subgroups in a histogram
@@ -515,10 +527,10 @@ def _joyplot(data,
                 element_zorder = group_zorder + j/(num_subgroups+1)
                 element_color = _get_color(i, num_axes, j, num_subgroups)
 
-                plot_density(a, x_range, subgroup,
+                plot_density(a, x_range, subgroup, bandwidth=bandwidth,
                              fill=fill, linecolor=linecolor, label=sublabel,
                              zorder=element_zorder, color=element_color, 
-                             ylog=ylog, logscalethres=logscalethres,
+                             ylog=ylog, logscalethres=symlogthres,
                              rug=rug, rug_kws=rug_kws,
                              bins=bins, **kwargs)
 
